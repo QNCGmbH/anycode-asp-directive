@@ -1,0 +1,70 @@
+import in.labulle.anycode.uml.*;
+
+class aspDirective {
+	def attribute(IAttribute a) {
+		return """Private prop_${a.name}"""
+	}
+	def attribute(IClassifier c) {
+		return """Private cls_${c.name}"""
+	}
+	def getter(IAttribute a) {
+		return """Public Property Get ${a.name}
+		${a.name} = prop_${a.name}
+	End Property"""
+	}
+	def getter(IClassifier c) {
+		def i, attribs = c.getAttributes()
+		def out = ""
+		for (i = 0; i < attribs.size(); i++) {
+			out += "Public Property Get " + attribs[i].name + "\n"
+			out += "		"+ attribs[i].name +" = cls_"+c.name+"."+attribs[i].name+"\n"
+			out += "	End Property"
+		}
+		return out
+	}
+	def setter(IAttribute a) {
+		return """Public Property Let ${a.name}(var)
+		prop_${a.name} = var
+	End Property"""
+	}
+	def setter(IClassifier c) {
+		def i, attribs = c.getAttributes()
+		def out = ""
+		for (i = 0; i < attribs.size(); i++) {
+			out += "Public Property Set " + attribs[i].name + "(var)\n"
+			out += "		cls_"+c.name+"."+attribs[i].name+" = var\n"
+			out += "	End Property"
+		}
+		return out
+	}
+	def dependency(IClassifier c) {
+		return """Set cls_${c.name} = New ${c.name}"""
+	}
+	def method(IOperation o) {
+		def i, params = o.getParameters()
+		def out = """${o.visibility} ${getOperationType(o)} ${o.getName()}("""
+		for (i = 0; i < params.size(); i++) {
+			if (i > 0) {
+				out += ", "
+			}
+			out += params[i].getName()
+		}
+		out += ")\n"
+		if (!isSub(o)) out += """		${o.getName()} = \n"""
+		out += """	End ${getOperationType(o)}"""
+		return out
+	}
+
+	/* private Operations */
+	def getOperationType(IOperation o) {
+		if (o.getReturnType().getName() == "void") {
+			return "Sub"
+		}
+		else {
+			return "Function"
+		}
+	}
+	def isSub(IOperation o) {
+		return o.getReturnType().getName() == "void"
+	}
+}
